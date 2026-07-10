@@ -1,0 +1,99 @@
+$engine: 3
+$onesync: on
+
+name: Apeiron Legacy RP
+version: "1.0.2"
+author: Apeiron RP
+description: "ESX Legacy base for Windows with free resources."
+
+tasks:
+  - action: download_github
+    src: https://github.com/citizenfx/cfx-server-data
+    ref: master
+    subpath: resources
+    dest: ./resources/[cfx-default]
+
+  - action: connect_database
+
+  - action: download_github
+    src: https://github.com/esx-framework/esx-core
+    ref: main
+    dest: ./tmp/core
+
+  - action: query_database
+    file: ./tmp/core/[SQL]/legacy.sql
+
+  - action: move_path
+    src: ./tmp/core/[core]
+    dest: ./resources/[core]
+
+  - action: download_github
+    src: https://github.com/esx-framework/ESX-Legacy-Addons
+    ref: main
+    dest: ./tmp/addons
+
+  - action: move_path
+    src: ./tmp/addons/[esx_addons]
+    dest: ./resources/[esx_addons]
+
+  - action: download_github
+    src: https://github.com/Bob74/bob74_ipl
+    ref: master
+    dest: ./resources/[standalone]/bob74_ipl
+
+  - action: download_github
+    src: https://github.com/AvarianKnight/pma-voice
+    ref: main
+    dest: ./resources/[standalone]/pma-voice
+
+  - action: download_file
+    url: https://github.com/overextended/oxmysql/releases/latest/download/oxmysql.zip
+    path: ./tmp/oxmysql.zip
+
+  - action: unzip
+    src: ./tmp/oxmysql.zip
+    dest: ./resources/[standalone]
+
+  - action: write_file
+    file: ./permissions.cfg
+    data: |
+      add_principal identifier.steam:110000101b298dc group.admin
+      add_ace group.admin command allow
+      add_ace group.admin command.quit deny
+      add_ace group.admin "vMenu.Everything" allow
+
+  - action: write_file
+    file: ./server.cfg
+    data: |
+      {{serverEndpoints}}
+
+      sv_maxclients {{maxClients}}
+      sv_licenseKey "{{svLicense}}"
+      set mysql_connection_string "{{dbConnectionString}}"
+
+      sets sv_projectName "{{serverName}}"
+      sets sv_projectDesc "Apeiron Legacy RP"
+      sets tags "esx,legacy,roleplay,greek,apeiron"
+      sets locale "el-GR"
+
+      {{addPrincipalsMaster}}
+
+      sv_scriptHookAllowed 0
+
+      setr voice_useNativeAudio true
+      setr voice_useSendingRangeOnly false
+
+      exec permissions.cfg
+
+      ensure mapmanager
+      ensure chat
+      ensure spawnmanager
+      ensure sessionmanager
+      ensure hardcap
+      ensure oxmysql
+      ensure [core]
+      ensure [standalone]
+      ensure [esx_addons]
+
+  - action: remove_path
+    path: ./tmp
