@@ -1,0 +1,216 @@
+$engine: 3
+$onesync: on
+
+name: Apeiron Legacy RP
+version: 1.0.0
+author: Apeiron RP
+description: ESX Legacy base for Windows with free resources: vMenu, NPWD, ox_inventory, ox_target and ox_doorlock.
+
+tasks:
+  # CFX default resources
+  - action: download_github
+    src: https://github.com/citizenfx/cfx-server-data
+    ref: master
+    subpath: resources
+    dest: ./resources/[cfx-default]
+
+  - action: remove_path
+    path: ./resources/[cfx-default]/[gameplay]/chat
+
+  # ESX Legacy official base
+  - action: connect_database
+
+  - action: download_github
+    src: https://github.com/esx-framework/esx-core
+    ref: main
+    dest: ./tmp/esx-core
+
+  - action: query_database
+    file: ./tmp/esx-core/[SQL]/legacy.sql
+
+  - action: move_path
+    src: ./tmp/esx-core/[core]
+    dest: ./resources/[core]
+
+  - action: download_github
+    src: https://github.com/esx-framework/ESX-Legacy-Addons
+    ref: main
+    dest: ./tmp/esx-addons
+
+  - action: move_path
+    src: ./tmp/esx-addons/[esx_addons]
+    dest: ./resources/[esx_addons]
+
+  # Standard dependencies
+  - action: download_github
+    src: https://github.com/Bob74/bob74_ipl
+    ref: master
+    dest: ./resources/[standalone]/bob74_ipl
+
+  - action: download_github
+    src: https://github.com/AvarianKnight/pma-voice
+    ref: main
+    dest: ./resources/[standalone]/pma-voice
+
+  - action: download_file
+    url: https://github.com/overextended/oxmysql/releases/latest/download/oxmysql.zip
+    path: ./tmp/files/oxmysql.zip
+
+  - action: unzip
+    src: ./tmp/files/oxmysql.zip
+    dest: ./resources/[standalone]
+
+  # OX resources
+  - action: download_file
+    url: https://github.com/overextended/ox_lib/releases/latest/download/ox_lib.zip
+    path: ./tmp/files/ox_lib.zip
+
+  - action: unzip
+    src: ./tmp/files/ox_lib.zip
+    dest: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/ox_inventory/releases/latest/download/ox_inventory.zip
+    path: ./tmp/files/ox_inventory.zip
+
+  - action: unzip
+    src: ./tmp/files/ox_inventory.zip
+    dest: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/ox_target/releases/latest/download/ox_target.zip
+    path: ./tmp/files/ox_target.zip
+
+  - action: unzip
+    src: ./tmp/files/ox_target.zip
+    dest: ./resources/[ox]
+
+  - action: download_file
+    url: https://github.com/overextended/ox_doorlock/releases/latest/download/ox_doorlock.zip
+    path: ./tmp/files/ox_doorlock.zip
+
+  - action: unzip
+    src: ./tmp/files/ox_doorlock.zip
+    dest: ./resources/[ox]
+
+  # NPWD phone
+  - action: download_file
+    url: https://github.com/project-error/npwd/releases/latest/download/npwd.zip
+    path: ./tmp/files/npwd.zip
+
+  - action: unzip
+    src: ./tmp/files/npwd.zip
+    dest: ./resources/[phone]
+
+  - action: download_file
+    url: https://github.com/project-error/screenshot-basic/releases/latest/download/screenshot-basic.zip
+    path: ./tmp/files/screenshot-basic.zip
+
+  - action: unzip
+    src: ./tmp/files/screenshot-basic.zip
+    dest: ./resources/[phone]
+
+  # vMenu
+  - action: download_file
+    url: https://github.com/TomGrobbe/vMenu/releases/latest/download/vMenu.zip
+    path: ./tmp/files/vMenu.zip
+
+  - action: unzip
+    src: ./tmp/files/vMenu.zip
+    dest: ./resources/[admin]
+
+  # Apeiron folders
+  - action: ensure_dir
+    path: ./resources/[apeiron]
+
+  - action: ensure_dir
+    path: ./resources/[jobs]
+
+  - action: ensure_dir
+    path: ./resources/[vehicles]
+
+  - action: ensure_dir
+    path: ./resources/[maps]
+
+  # Permissions
+  - action: write_file
+    file: ./permissions.cfg
+    data: |
+      # Apeiron owner
+      add_principal identifier.steam:110000101b298dc group.admin
+
+      # General admin commands
+      add_ace group.admin command allow
+      add_ace group.admin command.quit deny
+
+      # Full vMenu access for admins
+      add_ace group.admin "vMenu.Everything" allow
+
+  # Main configuration
+  - action: write_file
+    file: ./server.cfg
+    data: |
+      {{serverEndpoints}}
+
+      sv_maxclients {{maxClients}}
+      sv_licenseKey "{{svLicense}}"
+
+      set mysql_connection_string "{{dbConnectionString}}"
+
+      sets sv_projectName "{{serverName}}"
+      sets sv_projectDesc "Apeiron Legacy RP"
+      sets tags "esx, legacy, roleplay, greek, apeiron"
+      sets locale "el-GR"
+
+      sv_scriptHookAllowed 0
+      set onesync on
+
+      # ESX / OX
+      setr inventory:framework "esx"
+      setr inventory:slots 50
+      setr inventory:weight 30000
+      setr ox:locale "en"
+
+      # NPWD
+      set npwd:framework "esx"
+      set npwd:database "oxmysql"
+
+      # Voice
+      setr voice_useNativeAudio true
+      setr voice_useSendingRangeOnly true
+      setr voice_defaultCycle "F11"
+      setr voice_defaultVolume 0.30
+
+      exec permissions.cfg
+
+      ensure mapmanager
+      ensure chat
+      ensure spawnmanager
+      ensure sessionmanager
+      ensure hardcap
+
+      ensure oxmysql
+      ensure ox_lib
+
+      ensure [core]
+
+      ensure ox_target
+      ensure ox_inventory
+      ensure ox_doorlock
+
+      ensure [standalone]
+      ensure [esx_addons]
+
+      ensure screenshot-basic
+      ensure npwd
+
+      ensure vMenu
+
+      ensure [jobs]
+      ensure [vehicles]
+      ensure [maps]
+      ensure [apeiron]
+
+  # Cleanup
+  - action: remove_path
+    path: ./tmp
