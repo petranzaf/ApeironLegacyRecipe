@@ -2,12 +2,12 @@ $engine: 3
 $onesync: on
 
 name: Apeiron Legacy RP
-version: 1.0.0
+version: "1.0.1"
 author: Apeiron RP
-description: ESX Legacy base for Windows with free resources: vMenu, NPWD, ox_inventory, ox_target and ox_doorlock.
+description: "ESX Legacy base for Windows with free resources: vMenu, NPWD, ox_inventory, ox_target and ox_doorlock."
 
 tasks:
-  # CFX default resources
+  # Default CFX resources
   - action: download_github
     src: https://github.com/citizenfx/cfx-server-data
     ref: master
@@ -17,28 +17,39 @@ tasks:
   - action: remove_path
     path: ./resources/[cfx-default]/[gameplay]/chat
 
-  # ESX Legacy official base
+  # Official ESX Legacy recipe files
+  - action: download_github
+    src: https://github.com/esx-framework/esx-recipes
+    ref: legacy
+    dest: ./tmp/recipe
+
+  - action: move_path
+    src: ./tmp/recipe/esxLogo.png
+    dest: ./esxLogo.png
+
+  # Database and ESX core
   - action: connect_database
 
   - action: download_github
     src: https://github.com/esx-framework/esx-core
     ref: main
-    dest: ./tmp/esx-core
+    dest: ./tmp/core
 
   - action: query_database
-    file: ./tmp/esx-core/[SQL]/legacy.sql
+    file: ./tmp/core/[SQL]/legacy.sql
 
   - action: move_path
-    src: ./tmp/esx-core/[core]
+    src: ./tmp/core/[core]
     dest: ./resources/[core]
 
+  # Official ESX addons
   - action: download_github
     src: https://github.com/esx-framework/ESX-Legacy-Addons
     ref: main
-    dest: ./tmp/esx-addons
+    dest: ./tmp/addons
 
   - action: move_path
-    src: ./tmp/esx-addons/[esx_addons]
+    src: ./tmp/addons/[esx_addons]
     dest: ./resources/[esx_addons]
 
   # Standard dependencies
@@ -53,8 +64,8 @@ tasks:
     dest: ./resources/[standalone]/pma-voice
 
   - action: download_file
-    url: https://github.com/overextended/oxmysql/releases/latest/download/oxmysql.zip
     path: ./tmp/files/oxmysql.zip
+    url: https://github.com/overextended/oxmysql/releases/latest/download/oxmysql.zip
 
   - action: unzip
     src: ./tmp/files/oxmysql.zip
@@ -62,32 +73,32 @@ tasks:
 
   # OX resources
   - action: download_file
-    url: https://github.com/overextended/ox_lib/releases/latest/download/ox_lib.zip
     path: ./tmp/files/ox_lib.zip
+    url: https://github.com/overextended/ox_lib/releases/latest/download/ox_lib.zip
 
   - action: unzip
     src: ./tmp/files/ox_lib.zip
     dest: ./resources/[ox]
 
   - action: download_file
-    url: https://github.com/overextended/ox_inventory/releases/latest/download/ox_inventory.zip
     path: ./tmp/files/ox_inventory.zip
+    url: https://github.com/overextended/ox_inventory/releases/latest/download/ox_inventory.zip
 
   - action: unzip
     src: ./tmp/files/ox_inventory.zip
     dest: ./resources/[ox]
 
   - action: download_file
-    url: https://github.com/overextended/ox_target/releases/latest/download/ox_target.zip
     path: ./tmp/files/ox_target.zip
+    url: https://github.com/overextended/ox_target/releases/latest/download/ox_target.zip
 
   - action: unzip
     src: ./tmp/files/ox_target.zip
     dest: ./resources/[ox]
 
   - action: download_file
-    url: https://github.com/overextended/ox_doorlock/releases/latest/download/ox_doorlock.zip
     path: ./tmp/files/ox_doorlock.zip
+    url: https://github.com/overextended/ox_doorlock/releases/latest/download/ox_doorlock.zip
 
   - action: unzip
     src: ./tmp/files/ox_doorlock.zip
@@ -95,16 +106,16 @@ tasks:
 
   # NPWD phone
   - action: download_file
-    url: https://github.com/project-error/npwd/releases/latest/download/npwd.zip
     path: ./tmp/files/npwd.zip
+    url: https://github.com/project-error/npwd/releases/latest/download/npwd.zip
 
   - action: unzip
     src: ./tmp/files/npwd.zip
     dest: ./resources/[phone]
 
   - action: download_file
-    url: https://github.com/project-error/screenshot-basic/releases/latest/download/screenshot-basic.zip
     path: ./tmp/files/screenshot-basic.zip
+    url: https://github.com/project-error/screenshot-basic/releases/latest/download/screenshot-basic.zip
 
   - action: unzip
     src: ./tmp/files/screenshot-basic.zip
@@ -112,8 +123,8 @@ tasks:
 
   # vMenu
   - action: download_file
-    url: https://github.com/TomGrobbe/vMenu/releases/latest/download/vMenu.zip
     path: ./tmp/files/vMenu.zip
+    url: https://github.com/TomGrobbe/vMenu/releases/latest/download/vMenu.zip
 
   - action: unzip
     src: ./tmp/files/vMenu.zip
@@ -132,21 +143,16 @@ tasks:
   - action: ensure_dir
     path: ./resources/[maps]
 
-  # Permissions
+  # Admin permissions
   - action: write_file
     file: ./permissions.cfg
     data: |
-      # Apeiron owner
       add_principal identifier.steam:110000101b298dc group.admin
-
-      # General admin commands
       add_ace group.admin command allow
       add_ace group.admin command.quit deny
-
-      # Full vMenu access for admins
       add_ace group.admin "vMenu.Everything" allow
 
-  # Main configuration
+  # Main server configuration
   - action: write_file
     file: ./server.cfg
     data: |
@@ -159,25 +165,23 @@ tasks:
 
       sets sv_projectName "{{serverName}}"
       sets sv_projectDesc "Apeiron Legacy RP"
-      sets tags "esx, legacy, roleplay, greek, apeiron"
+      sets tags "esx,legacy,roleplay,greek,apeiron"
       sets locale "el-GR"
 
-      sv_scriptHookAllowed 0
-      set onesync on
+      {{addPrincipalsMaster}}
 
-      # ESX / OX
+      sv_scriptHookAllowed 0
+
       setr inventory:framework "esx"
       setr inventory:slots 50
       setr inventory:weight 30000
       setr ox:locale "en"
 
-      # NPWD
       set npwd:framework "esx"
       set npwd:database "oxmysql"
 
-      # Voice
       setr voice_useNativeAudio true
-      setr voice_useSendingRangeOnly true
+      setr voice_useSendingRangeOnly false
       setr voice_defaultCycle "F11"
       setr voice_defaultVolume 0.30
 
@@ -191,26 +195,19 @@ tasks:
 
       ensure oxmysql
       ensure ox_lib
-
       ensure [core]
-
       ensure ox_target
       ensure ox_inventory
       ensure ox_doorlock
-
       ensure [standalone]
       ensure [esx_addons]
-
       ensure screenshot-basic
       ensure npwd
-
       ensure vMenu
-
       ensure [jobs]
       ensure [vehicles]
       ensure [maps]
       ensure [apeiron]
 
-  # Cleanup
   - action: remove_path
     path: ./tmp
